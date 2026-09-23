@@ -1,5 +1,7 @@
 # Fathom AI Clone — "Parley"
 
+**Live demo:** https://fathom-ai-clone-seven.vercel.app
+
 **Parley** is an AI meeting intelligence web app inspired by the Fathom workflow. It turns every meeting into searchable, actionable knowledge: recordings, transcripts, AI summaries, action items, highlights, search, question answering, and shareable clips.
 
 It uses an original visual identity: the name, logo, and color system are its own. The workspace is seeded with a fictional company, **Northstack**, and 12 realistic, cross-referenced meetings, so it feels like a real team's workspace from the first click.
