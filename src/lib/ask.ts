@@ -148,6 +148,7 @@ function scoreDocs(docs: Doc[], terms: QueryTerm[], intent: Intent, bigrams: [st
       if (intent.actions && doc.kind === "action") score *= 1.8;
       if (intent.when && TIME_RE.test(doc.text)) score *= 1.3;
       if (intent.customers && doc.entry && getPerson(doc.entry.speakerId).external) score *= 1.5;
+      if (intent.customers && !doc.meeting.participants.some((p) => getPerson(p).external)) score *= 0.5;
       if (intent.amount && /\$\d/.test(doc.text)) score *= 1.8;
       else if (intent.amount && /%|\d/.test(doc.text)) score *= 1.3;
       if (doc.entry && intent.speakers.has(doc.entry.speakerId)) score *= 1.6;
@@ -177,19 +178,18 @@ function toSource(meeting: Meeting, entry: TranscriptEntry): AskSource {
   };
 }
 
-/** Find the transcript line that best supports a given fact. */
-function supportingEntry(meeting: Meeting, text: string): TranscriptEntry | undefined {
+/**
+ * Find the transcript line that best supports a given fact. Among lines with
+ * near-equal word overlap, prefer the earliest: that's where the point was
+ * actually discussed rather than recapped.
+ */
+function supportingEntry(meeting: Meeting, text: string, candidates?: TranscriptEntry[]): TranscriptEntry | undefined {
   const tokens = new Set(tokenize(text));
-  let best: TranscriptEntry | undefined;
-  let bestScore = 1;
-  for (const e of meeting.transcript) {
-    const overlap = tokenize(e.text).filter((t) => tokens.has(t)).length;
-    if (overlap > bestScore) {
-      best = e;
-      bestScore = overlap;
-    }
-  }
-  return best;
+  const pool = candidates?.length ? candidates : meeting.transcript;
+  const scored = pool.map((e) => ({ e, overlap: tokenize(e.text).filter((t) => tokens.has(t)).length }));
+  const best = Math.max(0, ...scored.map((s) => s.overlap));
+  if (best < 2) return undefined;
+  return scored.filter((s) => s.overlap >= best - 1).sort((a, b) => a.e.start - b.e.start)[0]?.e;
 }
 
 function noAnswer(question: string, meeting?: Meeting): AskAnswer {
@@ -221,7 +221,7 @@ export function askMeeting(meeting: Meeting, question: string): AskAnswer {
       answer: `There are ${meeting.actionItems.length} action items (${open.length} open). ${items.map(actionSentence).join(" ")}`,
       sources: items
         .map((a) => supportingEntry(meeting, a.title))
-        .filter((e): e is TranscriptEntry => Boolean(e))
+        .filter((e, i, arr): e is TranscriptEntry => Boolean(e) && arr.findIndex((x) => x?.id === e!.id) === i)
         .slice(0, 3)
         .map((e) => toSource(meeting, e)),
       mode: "local",
@@ -272,11 +272,11 @@ export function askMeeting(meeting: Meeting, question: string): AskAnswer {
     parts.unshift(`${getPerson(topLine.speakerId).name} said: “${topLine.text}”`);
   }
 
-  let sourceEntries = lines.slice(0, 3).map((l) => l.doc.entry!);
-  if (sourceEntries.length === 0 && chosen[0]) {
-    const e = supportingEntry(meeting, chosen[0].doc.text);
-    if (e) sourceEntries = [e];
-  }
+  // Lead with the line that best supports the chosen fact, then the strongest matches.
+  const support = chosen[0] ? supportingEntry(meeting, chosen[0].doc.text, lines.slice(0, 6).map((l) => l.doc.entry!)) : undefined;
+  const sourceEntries = [support, ...lines.map((l) => l.doc.entry!)]
+    .filter((e, i, arr): e is TranscriptEntry => Boolean(e) && arr.findIndex((x) => x?.id === e!.id) === i)
+    .slice(0, 3);
 
   return {
     question,
@@ -314,7 +314,9 @@ export function askAcrossMeetings(meetings: Meeting[], question: string): AskAns
 
   const results = relevant.map(({ meeting, list }) => {
     const fact = list.find((s) => s.doc.kind !== "transcript" && s.doc.kind !== "action");
-    const line = list.find((s) => s.doc.kind === "transcript")?.doc.entry ?? (fact ? supportingEntry(meeting, fact.doc.text) : undefined) ?? meeting.transcript[0];
+    const lineHits = list.filter((s) => s.doc.kind === "transcript").map((s) => s.doc.entry!);
+    const customerLine = intent.customers ? lineHits.find((e) => getPerson(e.speakerId).external) : undefined;
+    const line = customerLine ?? lineHits[0] ?? (fact ? supportingEntry(meeting, fact.doc.text) : undefined) ?? meeting.transcript[0];
     return {
       meetingId: meeting.id,
       title: meeting.title,

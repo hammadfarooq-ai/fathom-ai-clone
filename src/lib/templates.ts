@@ -25,7 +25,7 @@ export function getTemplate(id: TemplateId): TemplateDef {
 /* ------------------------------------------------------------------ */
 
 const PATTERNS = {
-  concern: /\b(concern|risk|worr|blocker|problem|pain|painful|slip|slow|issue|frustrat|hard to|stale|drift|too late|lock themselves out|brutal|tension|non-negotiable|deal-breaker|weakness|over-own|eroding|misleading|dead|unnoticed|muddies)\w*/i,
+  concern: /\b(concern|risk|worr|blocker|problem|pain|painful|slip|slow|issue|frustrat|hard to|stale|drift|too late|lock themselves out|brutal|tension|non-negotiable|deal-breaker|weakness|over-own|eroding|misleading|dead|unnoticed|muddies|what about|flag it|don't onboard|without it|auditors)\w*/i,
   positive: /\b(love|great|excited|excellent|win|went really well|promising|proud|happy|perfect|strong|clearest|tested well|best|enthusiastic|good instinct|within what i can approve)\w*/i,
   need: /\b(need|want|wish|would love|would be nice|must|require|mandat|asks? (?:for|about)|requested|non-negotiable|checkbox|table stakes)\w*/i,
   pricing: /\b(price|pricing|cost|budget|discount|per seat|dollars|thousand|contract|commit|overage|margin)\w*/i,
@@ -97,12 +97,13 @@ function topics(meeting: Meeting): SummarySectionItem[] {
 export function buildSummary(meeting: Meeting, templateId: TemplateId): SummarySection[] {
   const used = new Set<string>();
   const empty = "Nothing notable was captured for this section.";
+  const external = meeting.participants.some((p) => getPerson(p).external);
 
   switch (templateId) {
     case "sales":
       return [
         { id: "overview", title: "Call overview", kind: "paragraph", items: [{ text: meeting.summary }] },
-        { id: "pain", title: "Pain points", description: "Problems the other side described", kind: "quotes", items: pick(meeting, ["concern", "need"], { external: true, exclude: used }), empty },
+        { id: "pain", title: "Pain points", description: external ? "Problems the other side described" : undefined, kind: "quotes", items: pick(meeting, ["concern", "need"], { external: true, exclude: used }), empty },
         { id: "objections", title: "Objections & concerns", kind: "quotes", items: pick(meeting, ["concern"], { limit: 3, exclude: used }), empty },
         { id: "signals", title: "Buying signals", kind: "quotes", items: pick(meeting, ["positive"], { limit: 3, exclude: used }), empty },
         { id: "pricing", title: "Pricing & commercials", kind: "quotes", items: pick(meeting, ["pricing"], { limit: 3, exclude: used }), empty },

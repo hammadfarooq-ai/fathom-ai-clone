@@ -33,6 +33,7 @@ export function Stage({ meeting }: { meeting: Meeting }) {
   const entry = idx >= 0 ? meeting.transcript[idx] : undefined;
   const speakerId = entry?.speakerId;
   const tiles = meeting.participants.slice(0, 6);
+  const showCaption = Boolean(entry) && (playing || time > 0);
 
   return (
     <div
@@ -42,7 +43,8 @@ export function Stage({ meeting }: { meeting: Meeting }) {
     >
       <div
         className={cn(
-          "absolute inset-0 grid gap-2 p-3 sm:gap-3 sm:p-5",
+          "absolute inset-0 grid gap-2 p-3 transition-[padding] sm:gap-3 sm:p-5",
+          showCaption && "pb-14 sm:pb-20",
           tiles.length <= 2 ? "grid-cols-2" : tiles.length <= 4 ? "grid-cols-2 grid-rows-2" : "grid-cols-3 grid-rows-2",
         )}
       >
@@ -61,7 +63,7 @@ export function Stage({ meeting }: { meeting: Meeting }) {
               <div className="flex flex-col items-center gap-2">
                 <div className="relative">
                   {speaking ? <span className="absolute -inset-1.5 animate-ping rounded-full bg-brand-300/20" /> : null}
-                  <Avatar personId={id} size={tiles.length > 4 ? "lg" : "xl"} className="relative" />
+                  <Avatar personId={id} size={tiles.length > 4 ? "lg" : "xl"} className="relative max-sm:size-9 max-sm:text-[11px]" />
                 </div>
               </div>
               <span className="absolute bottom-1.5 left-2 flex max-w-[85%] items-center gap-1.5 truncate rounded-md bg-black/45 px-1.5 py-0.5 text-[10px] font-medium text-white/90 sm:text-[11px]">
@@ -90,7 +92,7 @@ export function Stage({ meeting }: { meeting: Meeting }) {
         ) : null}
       </div>
 
-      {entry && (playing || time > 0) ? (
+      {entry && showCaption ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 pt-10 pb-3 sm:px-8 sm:pb-5">
           <p className="mx-auto line-clamp-2 max-w-2xl text-center text-[12px] leading-snug text-white/95 sm:text-[14px]">
             <span className="font-semibold text-brand-200">{getPerson(entry.speakerId).name.split(" ")[0]}: </span>

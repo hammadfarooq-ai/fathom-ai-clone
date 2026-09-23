@@ -20,6 +20,7 @@ const SYNONYMS: string[][] = [
   ["pric", "cost", "discount"],
   ["need", "requir", "requirement", "must"],
   ["strength", "strong"],
+  ["well", "win", "great", "love", "good", "success"],
   ["caus", "root", "trac", "reason"],
   ["metric", "number", "arr", "nrr", "revenu", "retention", "kpi"],
   ["migrat", "mov", "upgrad"],
