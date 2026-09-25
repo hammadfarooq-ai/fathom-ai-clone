@@ -1,5 +1,5 @@
-import { getPerson } from "@/data/people";
 import type { Meeting, SummarySection, SummarySectionItem, TemplateId, TranscriptEntry } from "@/types";
+import { personOf } from "./people";
 
 export interface TemplateDef {
   id: TemplateId;
@@ -44,10 +44,10 @@ function pick(
   patterns: PatternKey[],
   { limit = 4, external, minLength = 45, exclude = new Set<string>() }: { limit?: number; external?: boolean; minLength?: number; exclude?: Set<string> } = {},
 ): SummarySectionItem[] {
-  const hasExternal = meeting.participants.some((p) => getPerson(p).external);
+  const hasExternal = meeting.participants.some((p) => personOf(meeting, p).external);
   const scored = meeting.transcript
     .filter((e) => !exclude.has(e.id) && e.text.length >= minLength)
-    .filter((e) => (external === undefined || !hasExternal ? true : getPerson(e.speakerId).external === external))
+    .filter((e) => (external === undefined || !hasExternal ? true : personOf(meeting, e.speakerId).external === external))
     .map((e) => ({
       e,
       score: patterns.reduce((acc, p) => acc + (PATTERNS[p].test(e.text) ? 1 : 0), 0),
@@ -68,7 +68,7 @@ function questions(meeting: Meeting, limit = 3): SummarySectionItem[] {
 }
 
 function quotes(meeting: Meeting, limit = 3, exclude = new Set<string>()): SummarySectionItem[] {
-  const externals = meeting.transcript.filter((e) => getPerson(e.speakerId).external && !exclude.has(e.id));
+  const externals = meeting.transcript.filter((e) => personOf(meeting, e.speakerId).external && !exclude.has(e.id));
   const pool = externals.length >= 2 ? externals : meeting.transcript.filter((e) => !exclude.has(e.id));
   return [...pool]
     .sort((a, b) => b.text.length - a.text.length)
@@ -97,7 +97,7 @@ function topics(meeting: Meeting): SummarySectionItem[] {
 export function buildSummary(meeting: Meeting, templateId: TemplateId): SummarySection[] {
   const used = new Set<string>();
   const empty = "Nothing notable was captured for this section.";
-  const external = meeting.participants.some((p) => getPerson(p).external);
+  const external = meeting.participants.some((p) => personOf(meeting, p).external);
 
   switch (templateId) {
     case "sales":
@@ -164,8 +164,8 @@ export function summaryToText(meeting: Meeting, sections: SummarySection[]): str
     if (s.items.length === 0) lines.push(`- ${s.empty ?? "—"}`);
     for (const item of s.items) {
       if (s.kind === "paragraph") lines.push(item.text);
-      else if (s.kind === "checklist") lines.push(`- [ ] ${item.text}${item.speakerId ? ` (${getPerson(item.speakerId).name})` : ""}`);
-      else if (s.kind === "quotes") lines.push(`- ${getPerson(item.speakerId ?? "").name}: “${item.text}”`);
+      else if (s.kind === "checklist") lines.push(`- [ ] ${item.text}${item.speakerId ? ` (${personOf(meeting, item.speakerId).name})` : ""}`);
+      else if (s.kind === "quotes") lines.push(`- ${personOf(meeting, item.speakerId ?? "").name}: “${item.text}”`);
       else lines.push(`- ${item.text}`);
     }
     lines.push("");

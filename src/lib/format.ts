@@ -1,5 +1,3 @@
-import { DEMO_TODAY } from "@/data";
-
 const UTC = "UTC";
 
 /** 75 → "01:15", 3725 → "1:02:05" */
@@ -32,8 +30,13 @@ const longFmt = new Intl.DateTimeFormat("en-US", { timeZone: UTC, weekday: "long
 const shortFmt = new Intl.DateTimeFormat("en-US", { timeZone: UTC, month: "short", day: "numeric" });
 const timeFmt = new Intl.DateTimeFormat("en-US", { timeZone: UTC, hour: "numeric", minute: "2-digit" });
 
-function daysFromToday(iso: string): number {
-  const today = Date.parse(`${DEMO_TODAY}T00:00:00Z`);
+/** Today's date (YYYY-MM-DD) in the workspace's UTC wall-clock convention. */
+export function todayIso(now = new Date()): string {
+  return now.toISOString().slice(0, 10);
+}
+
+export function daysFromToday(iso: string, now = new Date()): number {
+  const today = Date.parse(`${todayIso(now)}T00:00:00Z`);
   const day = Date.parse(`${iso.slice(0, 10)}T00:00:00Z`);
   return Math.round((day - today) / 86_400_000);
 }

@@ -1,6 +1,6 @@
-import { firstName, getPerson } from "@/data/people";
 import type { ActionItem, AskAnswer, AskSource, Meeting, TranscriptEntry } from "@/types";
 import { formatShortDate } from "./format";
+import { firstNameOf, personOf } from "./people";
 import { expandQuery, sentences, tokenize, type QueryTerm } from "./text";
 
 /**
@@ -59,7 +59,7 @@ function detectIntent(q: string, meetings: Meeting[]): Intent {
   const s = q.toLowerCase();
   const qWords = new Set(s.match(/[a-z]+/g) ?? []);
   const speakers = new Set(
-    meetings.flatMap((m) => m.participants).filter((p) => qWords.has(firstName(p).toLowerCase())),
+    meetings.flatMap((m) => m.participants.filter((p) => qWords.has(firstNameOf(m, p).toLowerCase()))),
   );
   return {
     speakers,
@@ -73,10 +73,10 @@ function detectIntent(q: string, meetings: Meeting[]): Intent {
   };
 }
 
-function actionSentence(a: ActionItem): string {
+function actionSentence(meeting: Meeting, a: ActionItem): string {
   const verb = a.title.charAt(0).toLowerCase() + a.title.slice(1);
   const due = formatShortDate(`${a.dueDate}T00:00:00Z`);
-  return `${firstName(a.ownerId)} will ${verb} by ${due}${a.completed ? " (already done)" : ""}.`;
+  return `${firstNameOf(meeting, a.ownerId)} will ${verb} by ${due}${a.completed ? " (already done)" : ""}.`;
 }
 
 function buildDocs(meetings: Meeting[]): Doc[] {
@@ -90,7 +90,7 @@ function buildDocs(meetings: Meeting[]): Doc[] {
     m.keyDecisions.forEach((t) => push(m, "decision", t));
     m.takeaways.forEach((t) => push(m, "takeaway", t));
     sentences(m.summary).forEach((t) => push(m, "summary", t));
-    m.actionItems.forEach((a) => push(m, "action", `${a.title} ${getPerson(a.ownerId).name}`, { action: a }));
+    m.actionItems.forEach((a) => push(m, "action", `${a.title} ${personOf(m, a.ownerId).name}`, { action: a }));
     m.transcript.forEach((e) => push(m, "transcript", e.text, { entry: e }));
   }
   return docs;
@@ -104,7 +104,7 @@ function hasBigram(seq: string[], a: string, b: string): boolean {
 /** Query terms, with meeting participants' names down-weighted (they appear everywhere). */
 function queryTerms(question: string, meetings: Meeting[]): { terms: QueryTerm[]; bigrams: [string, string][] } {
   // Participant names appear everywhere within a single meeting, so they carry little signal.
-  const names = new Set(meetings.length === 1 ? meetings[0].participants.map((p) => tokenize(firstName(p))[0]) : []);
+  const names = new Set(meetings.length === 1 ? meetings[0].participants.map((p) => tokenize(firstNameOf(meetings[0], p))[0]) : []);
   const terms = expandQuery(question, { dropIntentWords: true }).map((t) =>
     t.weight === 1 && names.has(t.term) ? { ...t, weight: WEAK_WEIGHT } : t,
   );
@@ -147,8 +147,8 @@ function scoreDocs(docs: Doc[], terms: QueryTerm[], intent: Intent, bigrams: [st
       if (intent.decision && doc.kind === "decision") score *= 1.6;
       if (intent.actions && doc.kind === "action") score *= 1.8;
       if (intent.when && TIME_RE.test(doc.text)) score *= 1.3;
-      if (intent.customers && doc.entry && getPerson(doc.entry.speakerId).external) score *= 1.5;
-      if (intent.customers && !doc.meeting.participants.some((p) => getPerson(p).external)) score *= 0.5;
+      if (intent.customers && doc.entry && personOf(doc.meeting, doc.entry.speakerId).external) score *= 1.5;
+      if (intent.customers && !doc.meeting.participants.some((p) => personOf(doc.meeting, p).external)) score *= 0.5;
       if (intent.amount && /\$\d/.test(doc.text)) score *= 1.8;
       else if (intent.amount && /%|\d/.test(doc.text)) score *= 1.3;
       if (doc.entry && intent.speakers.has(doc.entry.speakerId)) score *= 1.6;
@@ -218,7 +218,7 @@ export function askMeeting(meeting: Meeting, question: string): AskAnswer {
     const items = (open.length ? open : meeting.actionItems).slice(0, 4);
     return {
       question,
-      answer: `There are ${meeting.actionItems.length} action items (${open.length} open). ${items.map(actionSentence).join(" ")}`,
+      answer: `There are ${meeting.actionItems.length} action items (${open.length} open). ${items.map((a) => actionSentence(meeting, a)).join(" ")}`,
       sources: items
         .map((a) => supportingEntry(meeting, a.title))
         .filter((e, i, arr): e is TranscriptEntry => Boolean(e) && arr.findIndex((x) => x?.id === e!.id) === i)
@@ -263,13 +263,13 @@ export function askMeeting(meeting: Meeting, question: string): AskAnswer {
   const bestAction = actions[0];
   const actionBar = top * (intent.decision ? 0.2 : 0.35); // decision intent inflates the top score
   if (bestAction && bestAction.score >= actionBar && bestAction.doc.action) {
-    parts.push(actionSentence(bestAction.doc.action));
+    parts.push(actionSentence(meeting, bestAction.doc.action));
   }
 
   // When a transcript line is clearly the best evidence, lead with the quote.
   const topLine = lines[0]?.doc.entry;
   if (topLine && (parts.length === 0 || (scored[0].doc.kind === "transcript" && chosen.length === 0))) {
-    parts.unshift(`${getPerson(topLine.speakerId).name} said: “${topLine.text}”`);
+    parts.unshift(`${personOf(meeting, topLine.speakerId).name} said: “${topLine.text}”`);
   }
 
   // Lead with the line that best supports the chosen fact, then the strongest matches.
@@ -315,7 +315,7 @@ export function askAcrossMeetings(meetings: Meeting[], question: string): AskAns
   const results = relevant.map(({ meeting, list }) => {
     const fact = list.find((s) => s.doc.kind !== "transcript" && s.doc.kind !== "action");
     const lineHits = list.filter((s) => s.doc.kind === "transcript").map((s) => s.doc.entry!);
-    const customerLine = intent.customers ? lineHits.find((e) => getPerson(e.speakerId).external) : undefined;
+    const customerLine = intent.customers ? lineHits.find((e) => personOf(meeting, e.speakerId).external) : undefined;
     const line = customerLine ?? lineHits[0] ?? (fact ? supportingEntry(meeting, fact.doc.text) : undefined) ?? meeting.transcript[0];
     return {
       meetingId: meeting.id,
@@ -358,8 +358,8 @@ export function buildLlmContext(answer: AskAnswer, meetings: Meeting[]): string 
         `Meeting: ${m.title} (${formatShortDate(m.date)})`,
         `Summary: ${m.summary}`,
         `Decisions: ${m.keyDecisions.join(" | ")}`,
-        `Action items: ${m.actionItems.map(actionSentence).join(" ")}`,
-        ...cited.map((s) => `[${s.label} @ ${Math.floor(s.start / 60)}:${String(s.start % 60).padStart(2, "0")}] ${getPerson(s.speakerId).name}: ${s.excerpt}`),
+        `Action items: ${m.actionItems.map((a) => actionSentence(m, a)).join(" ")}`,
+        ...cited.map((s) => `[${s.label} @ ${Math.floor(s.start / 60)}:${String(s.start % 60).padStart(2, "0")}] ${personOf(m, s.speakerId).name}: ${s.excerpt}`),
       ].join("\n");
     })
     .join("\n\n");
