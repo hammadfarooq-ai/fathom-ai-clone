@@ -9,6 +9,9 @@ import type {
   TranscriptEntry,
 } from "@/types";
 
+/** A meeting as authored in the seed files, before people are resolved from the database. */
+export type SeedMeeting = Omit<Meeting, "people" | "status" | "source">;
+
 export interface MeetingSpec {
   id: string;
   title: string;
@@ -31,7 +34,7 @@ export interface MeetingSpec {
   lines: Line[];
 }
 
-export function defineMeeting(spec: MeetingSpec): Meeting {
+export function defineMeeting(spec: MeetingSpec): SeedMeeting {
   const durationSec = ts(spec.duration);
   const transcript = buildTranscript(spec.id, spec.lines);
   return {

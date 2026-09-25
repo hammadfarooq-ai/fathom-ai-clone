@@ -11,6 +11,8 @@ export type MeetingType =
   | "Onboarding"
   | "Marketing";
 
+export type MeetingStatus = "processing" | "ready";
+
 export type TemplateId =
   | "general"
   | "sales"
@@ -96,6 +98,40 @@ export interface Meeting {
   /** Descriptive metadata only, e.g. "Collaborative · decision-focused". */
   tone: string;
   suggestedQuestions: string[];
+  /** Everyone referenced by this meeting (participants, owners, highlight authors). */
+  people: Record<string, Person>;
+  status: MeetingStatus;
+  source: "seed" | "capture" | "import";
+}
+
+/** Lightweight meeting row for lists (no transcript). */
+export interface MeetingListItem {
+  id: string;
+  title: string;
+  date: string;
+  durationSec: number;
+  meetingType: MeetingType;
+  platform: Platform;
+  hostId: string;
+  participants: string[];
+  tags: string[];
+  summary: string;
+  status: MeetingStatus;
+  source: "seed" | "capture" | "import";
+  openActions: number;
+  totalActions: number;
+  highlightCount: number;
+  /** Share of speaking time per participant, 0..1, largest first. */
+  talkTime: { personId: string; share: number }[];
+  /** Pipeline progress for meetings still processing. */
+  processing?: ProcessingState;
+}
+
+export interface ProcessingState {
+  step: number;
+  steps: { id: string; label: string; detail: string }[];
+  startedAt: string;
+  readyAt: string;
 }
 
 export interface UpcomingMeeting {
@@ -107,7 +143,7 @@ export interface UpcomingMeeting {
   participants: string[];
   meetingType: MeetingType;
   autoRecord: boolean;
-  calendar: "Google Calendar" | "Outlook";
+  calendar: "google" | "outlook";
 }
 
 export interface Clip {
@@ -116,6 +152,31 @@ export interface Clip {
   start: number;
   end: number;
   title: string;
+  views?: number;
+  createdAt?: string;
+  meetingTitle?: string;
+}
+
+export interface ActionItemWithMeeting extends ActionItem {
+  meetingId: string;
+  meetingTitle: string;
+  meetingDate: string;
+}
+
+export interface HighlightWithContext extends Highlight {
+  meetingTitle: string;
+  meetingDate: string;
+  quote: string;
+  speakerId: string;
+}
+
+export interface WorkspaceSettings {
+  calendars: { google: boolean; outlook: boolean };
+  autoRecord: "all" | "external" | "none";
+  defaultTemplate: TemplateId;
+  integrations: Record<"slack" | "hubspot" | "notion" | "linear", boolean>;
+  notifications: { summaryEmail: boolean; actionReminders: boolean; weeklyDigest: boolean };
+  joinAs: string;
 }
 
 export interface SummarySectionItem {

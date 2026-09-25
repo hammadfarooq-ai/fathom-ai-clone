@@ -1,7 +1,6 @@
 import type { Person } from "@/types";
 
-export const CURRENT_USER_ID = "hammad";
-export const COMPANY = "Northstack";
+import { COMPANY } from "@/lib/constants";
 
 const list: Person[] = [
   // Northstack (internal)
@@ -28,22 +27,4 @@ const list: Person[] = [
   { id: "maya", name: "Maya Torres", email: "maya@orbitlabs.co", role: "VP Operations", company: "Orbit Labs", color: "#65a30d", external: true },
 ];
 
-export const people: Record<string, Person> = Object.fromEntries(list.map((p) => [p.id, p]));
-
-export function getPerson(id: string): Person {
-  return (
-    people[id] ?? {
-      id,
-      name: id,
-      email: "",
-      role: "",
-      company: "",
-      color: "#78716c",
-      external: true,
-    }
-  );
-}
-
-export function firstName(id: string): string {
-  return getPerson(id).name.split(" ")[0];
-}
+export const seedPeople: Person[] = list;

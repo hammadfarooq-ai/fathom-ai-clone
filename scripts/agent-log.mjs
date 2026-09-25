@@ -35,11 +35,20 @@ function author() {
   return process.env.USER || process.env.USERNAME || "unknown";
 }
 
+/**
+ * The desktop app prepends <system-reminder> blocks (local folder lists, harness
+ * notes) to some prompts. They are not typed by the user, so they are removed;
+ * the user's own text is kept verbatim.
+ */
+function stripInjected(text) {
+  return text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>\s*/g, "").trim();
+}
+
 function promptText(entry) {
   const c = entry.message?.content;
-  if (typeof c === "string") return c;
+  if (typeof c === "string") return stripInjected(c) || null;
   if (!Array.isArray(c) || c.some((b) => b.type === "tool_result")) return null;
-  const text = c.filter((b) => b.type === "text").map((b) => b.text).join("\n");
+  const text = stripInjected(c.filter((b) => b.type === "text").map((b) => b.text).join("\n"));
   return text || null;
 }
 
