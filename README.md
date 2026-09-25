@@ -2,7 +2,7 @@
 
 **Meeting notes you can search, question, and share.**
 
-**Live demo:** _(added after deployment)_
+**Live demo:** https://fathom-ai-clone-seven.vercel.app (no sign-in; hosted on Vercel with Neon Postgres)
 
 Parley records a meeting and turns it into notes, a synced transcript, action items, highlights, and shareable clips. You can search everything that was said and ask questions that are answered with quotes from the transcript.
 
