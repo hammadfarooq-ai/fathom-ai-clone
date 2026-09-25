@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import * as t from "@/db/schema";
+import { MARK_CLOSE, MARK_OPEN } from "@/lib/marks";
 import type { MeetingType } from "@/types";
 
 /**
@@ -13,8 +14,6 @@ import type { MeetingType } from "@/types";
  * ⟦ ⟧ as match delimiters so the client can render marks without HTML.
  */
 
-export const MARK_OPEN = "⟦";
-export const MARK_CLOSE = "⟧";
 const HEADLINE = `StartSel=${MARK_OPEN}, StopSel=${MARK_CLOSE}, MaxWords=28, MinWords=10, MaxFragments=1, FragmentDelimiter=" … "`;
 
 /** Build a safe prefix tsquery from free text; null when nothing searchable remains. */

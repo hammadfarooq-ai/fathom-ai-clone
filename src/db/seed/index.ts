@@ -1,5 +1,6 @@
 import type { Clip, UpcomingMeeting } from "@/types";
 import type { SeedMeeting } from "./builders";
+import { launchGoNoGo } from "./meetings-large";
 import { acmeProductDemo, customerDiscovery, enterpriseOnboarding, investorDiscussion } from "./meetings-customers";
 import { designReview, engineeringSync, pricingWorkshop, q4ProductStrategy } from "./meetings-product";
 import { hiringInterview, marketingPlanning, salesPipelineReview, weeklyOneOnOne } from "./meetings-team";
@@ -18,6 +19,7 @@ export const SEED_TODAY = "2026-09-23";
 export type { SeedMeeting };
 
 export const seedMeetings: SeedMeeting[] = [
+  launchGoNoGo,
   acmeProductDemo,
   engineeringSync,
   q4ProductStrategy,

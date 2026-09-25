@@ -1,82 +1,221 @@
 @import "tailwindcss";
 
 /*
- * Parley design tokens.
- * Warm neutral surfaces, a deep "pine" brand accent, and amber reserved for
- * highlights so that highlighted moments read like a highlighter pen.
+ * Parley — "paper & ink".
+ *
+ * Warm paper surfaces, near-black ink, and a single vermilion accent that is
+ * reserved for things that are live or current (recording, the playhead, the
+ * active line). Highlighter yellow marks saved moments and search matches.
+ * Display type is Instrument Serif; UI and transcript text are Geist.
+ *
+ * Theme follows the OS (prefers-color-scheme) unless the viewer picked one;
+ * that choice is a cookie the root layout turns into data-theme on <html>,
+ * so the right palette is in the first HTML response with no script.
  */
-@theme {
+
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
+:root {
+  --paper: #f4f1ea;
+  --card: #fbfaf6;
+  --sunken: #ebe7dd;
+  --rule: #ded8cb;
+  --rule-strong: #c8c0af;
+  --ink: #1b1915;
+  --ink-2: #48443b;
+  --muted: #726c5f;
+  --faint: #9a9384;
+  --accent: #d6461a;
+  --accent-hover: #bd3a12;
+  --accent-ink: #fffaf5;
+  --accent-soft: #f8dfd3;
+  --mark: #f2c230;
+  --mark-soft: #fbeeb4;
+  --ok: #2e7650;
+  --ok-soft: #d9ecdf;
+  --danger: #b3261e;
+  --shadow: 0 1px 0 rgb(27 25 21 / 0.04), 0 1px 3px rgb(27 25 21 / 0.06);
+  --shadow-pop: 0 18px 40px -12px rgb(27 25 21 / 0.28), 0 2px 8px rgb(27 25 21 / 0.08);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --paper: #141310;
+  --card: #1c1a16;
+  --sunken: #0e0d0b;
+  --rule: #2d2a24;
+  --rule-strong: #413c33;
+  --ink: #efebe2;
+  --ink-2: #cbc4b5;
+  --muted: #968e7e;
+  --faint: #6e685c;
+  --accent: #ff7043;
+  --accent-hover: #ff8a63;
+  --accent-ink: #1b0d07;
+  --accent-soft: #3b2117;
+  --mark: #e8bf3a;
+  --mark-soft: #3a3117;
+  --ok: #6cc293;
+  --ok-soft: #173024;
+  --danger: #ff8a80;
+  --shadow: 0 1px 0 rgb(0 0 0 / 0.3);
+  --shadow-pop: 0 18px 40px -12px rgb(0 0 0 / 0.7), 0 0 0 1px var(--rule);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #141310;
+    --card: #1c1a16;
+    --sunken: #0e0d0b;
+    --rule: #2d2a24;
+    --rule-strong: #413c33;
+    --ink: #efebe2;
+    --ink-2: #cbc4b5;
+    --muted: #968e7e;
+    --faint: #6e685c;
+    --accent: #ff7043;
+    --accent-hover: #ff8a63;
+    --accent-ink: #1b0d07;
+    --accent-soft: #3b2117;
+    --mark: #e8bf3a;
+    --mark-soft: #3a3117;
+    --ok: #6cc293;
+    --ok-soft: #173024;
+    --danger: #ff8a80;
+    --shadow: 0 1px 0 rgb(0 0 0 / 0.3);
+    --shadow-pop: 0 18px 40px -12px rgb(0 0 0 / 0.7), 0 0 0 1px var(--rule);
+    color-scheme: dark;
+  }
+}
+
+/* Screens with room for every speaker lane under the content. */
+@custom-variant roomy (@media (min-width: 768px) and (min-height: 820px));
+
+@theme inline {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-instrument-serif), "Iowan Old Style", Georgia, serif;
 
-  --color-canvas: #f7f7f5;
-  --color-surface: #ffffff;
-  --color-subtle: #f3f3f0;
-  --color-line: #e7e6e2;
-  --color-line-strong: #d6d4ce;
-  --color-ink: #1c1b19;
-  --color-ink-2: #45433e;
-  --color-muted: #6f6c64;
-  --color-faint: #8f8b82;
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-sunken: var(--sunken);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-mark: var(--mark);
+  --color-mark-soft: var(--mark-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-danger: var(--danger);
 
-  --color-brand-50: #eefaf6;
-  --color-brand-100: #d5f2e8;
-  --color-brand-200: #aee4d3;
-  --color-brand-300: #7bcfb8;
-  --color-brand-400: #45b398;
-  --color-brand-500: #1f977d;
-  --color-brand-600: #137a66;
-  --color-brand-700: #126253;
-  --color-brand-800: #134e44;
-  --color-brand-900: #123f38;
-  --color-brand-950: #062622;
-
-  --color-mark-50: #fffaeb;
-  --color-mark-100: #fef0c7;
-  --color-mark-200: #fde08a;
-  --color-mark-400: #f5b525;
-  --color-mark-600: #c27c0e;
-  --color-mark-700: #9a5b0c;
-
-  --shadow-card: 0 1px 2px rgb(28 27 25 / 0.04), 0 1px 1px rgb(28 27 25 / 0.03);
-  --shadow-pop: 0 12px 32px -8px rgb(28 27 25 / 0.18), 0 2px 6px rgb(28 27 25 / 0.06);
+  --shadow-card: var(--shadow);
+  --shadow-pop: var(--shadow-pop);
 
   --animate-fade-in: fade-in 160ms ease-out;
-  --animate-slide-up: slide-up 200ms cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-flash: flash 1.6s ease-out;
+  --animate-rise: rise 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-flash: flash 1.8s ease-out;
+  --animate-pulse-dot: pulse-dot 1.4s ease-in-out infinite;
 
   @keyframes fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
   }
-  @keyframes slide-up {
-    from { opacity: 0; transform: translateY(6px); }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
   @keyframes flash {
-    0%, 30% { background-color: var(--color-mark-100); }
+    0%, 35% { background-color: var(--mark-soft); }
     100% { background-color: transparent; }
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
   }
 }
 
 @layer base {
   html {
-    color-scheme: light;
     -webkit-tap-highlight-color: transparent;
+    background: var(--paper);
   }
   body {
-    background: var(--color-canvas);
-    color: var(--color-ink);
+    background: var(--paper);
+    color: var(--ink);
     font-family: var(--font-sans);
-    font-feature-settings: "cv11", "ss01";
+    font-feature-settings: "ss01", "cv11";
   }
   ::selection {
-    background: var(--color-brand-100);
+    background: var(--mark-soft);
+    color: var(--ink);
   }
   :focus-visible {
-    outline: 2px solid var(--color-brand-500);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
-    border-radius: 6px;
+    border-radius: 4px;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  /* Small-caps section label, used above every block of content. */
+  .eyebrow {
+    font-size: 11px;
+    line-height: 16px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  /* Highlighter-pen mark for search matches and saved moments. */
+  .marker {
+    background: linear-gradient(transparent 12%, var(--mark-soft) 12%, var(--mark-soft) 88%, transparent 88%);
+    color: inherit;
+    padding: 0 1px;
+    border-radius: 2px;
+  }
+  /* Speaker colour, lifted for contrast in dark mode. */
+  .speaker-color {
+    color: var(--c);
+  }
+  .speaker-color:where([data-theme="dark"] *) {
+    color: color-mix(in oklab, var(--c) 62%, white);
+  }
+  @media (prefers-color-scheme: dark) {
+    .speaker-color:where(:root:not([data-theme="light"]) *) {
+      color: color-mix(in oklab, var(--c) 62%, white);
+    }
+  }
+  .speaker-bg {
+    background-color: var(--c);
+  }
+  .speaker-bg:where([data-theme="dark"] *) {
+    background-color: color-mix(in oklab, var(--c) 72%, white);
+  }
+  @media (prefers-color-scheme: dark) {
+    .speaker-bg:where(:root:not([data-theme="light"]) *) {
+      background-color: color-mix(in oklab, var(--c) 72%, white);
+    }
   }
 }
 
@@ -86,13 +225,16 @@
   }
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: var(--color-line-strong) transparent;
+    scrollbar-color: var(--rule-strong) transparent;
   }
   .no-scrollbar {
     scrollbar-width: none;
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 

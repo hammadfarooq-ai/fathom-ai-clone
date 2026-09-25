@@ -406,7 +406,7 @@ export async function updateSettings(patch: DeepPartial<WorkspaceSettings>): Pro
 /* ------------------------------------------------------------------ */
 
 export async function getOverviewStats() {
-  const weekAgo = new Date(Date.now() - 7 * 86_400_000);
+  const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const [row] = await getDb().execute<{
     meetings_week: number;
     seconds_week: number;

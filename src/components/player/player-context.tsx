@@ -21,6 +21,8 @@ interface PlayerControls {
   muted: boolean;
   simulated: boolean;
   range: { start: number; end: number };
+  /** Read the playhead without subscribing to every tick. */
+  currentTime: () => number;
   play: () => void;
   pause: () => void;
   toggle: () => void;
@@ -123,6 +125,7 @@ export function PlayerProvider({
     setMuted(v === 0);
   }, []);
   const toggleMute = useCallback(() => setMuted((m) => !m), []);
+  const currentTime = useCallback(() => timeRef.current, []);
 
   const controls = useMemo<PlayerControls>(
     () => ({
@@ -133,6 +136,7 @@ export function PlayerProvider({
       muted,
       simulated: !src,
       range: bounds,
+      currentTime,
       play,
       pause,
       toggle,
@@ -142,7 +146,7 @@ export function PlayerProvider({
       setVolume,
       toggleMute,
     }),
-    [duration, playing, rate, volume, muted, src, bounds, play, pause, toggle, seek, skip, setRate, setVolume, toggleMute],
+    [duration, playing, rate, volume, muted, src, bounds, currentTime, play, pause, toggle, seek, skip, setRate, setVolume, toggleMute],
   );
 
   return (
