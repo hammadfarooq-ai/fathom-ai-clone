@@ -33,6 +33,13 @@ Consequences I'm not hiding:
 
 Running the hook command with a real `Stop` payload regenerated the session file: 11 prompts and 10 responses. The 11th prompt, the one that asked for this fix, was still in progress at the time.
 
+## Resubmission session (2026-09-25)
+
+The resubmission (own interface + Postgres backend) was built in session `6da68331`, logged at `.agent-logs/2026-09-25_12-37-22_6da68331-a7c8-445e-a1dd-fe8193ef17c8.md`.
+
+- The session started in the desktop app without a project folder and moved into this repository after the first prompt, so the project's `.claude/settings.json` hooks were not active for the opening turns. To avoid gaps, I ran `scripts/agent-log.mjs` on the session's own transcript **before every code commit**. Each commit (`2a19e90` database, `3a2a9c0` API, `788c308` interface, and the ones after) includes the log as it stood at that moment, interleaved with the code.
+- One change to the script: the desktop app prepends `<system-reminder>` blocks (for example, the list of recent local folders) to some prompts. The user didn't type these, so the script now removes them. The user's own text is still copied verbatim.
+
 ## Canary entries
 
 <!-- CANARY-1 -->
